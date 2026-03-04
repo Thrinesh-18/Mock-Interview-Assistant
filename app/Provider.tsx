@@ -2,10 +2,8 @@
 import { api } from '@/convex/_generated/api';
 import { useUser } from '@clerk/nextjs';
 import { useMutation } from 'convex/react';
-import { create } from 'domain';
-import React, { use, useEffect, useState, createContext } from 'react'
-
-const UserDetailContext = createContext({});
+import React, { useEffect, useState } from 'react'
+import { UserDetailContext } from '@/context/UserDetailContext';
 
 function Provider({children}: any) {
   const {user}=useUser();
@@ -42,7 +40,3 @@ function Provider({children}: any) {
 }
 
 export default Provider
-
-export const useUserDetailContext=()=>{
-  return createContext(UserDetailContext);
-}
