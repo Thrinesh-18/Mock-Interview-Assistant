@@ -19,6 +19,8 @@ import { Loader2Icon } from 'lucide-react'
 import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 function CreateInterviewDialog() {
 
   const [formData,setFormData] = useState<any>();
@@ -26,6 +28,7 @@ function CreateInterviewDialog() {
   const [loading,setLoading] = useState(false);
   const {userDetail,setUserDetail}=useContext(UserDetailContext);
   const saveInterviewQuestion = useMutation(api.Interview.SaveInterviewQuestions);
+  const router=useRouter();
 
 const onHandleInputChange = (field:string,value:string) => {
   setFormData((prev:any) => ({
@@ -46,15 +49,27 @@ const onSubmit = async () => {
     try {
       const res = await axios.post("/api/generate-interview-questions", formData_);
       console.log(res.data);
+
+      if(res.data.status==429){
+        toast.warning(res.data.result);
+        console.log(res.data.result);
+        return;
+      }
+
+
+
       //Save to Database
       //@ts-ignore
-      const resp=await saveInterviewQuestion({
+      const interviewId=await saveInterviewQuestion({
         questions:res.data,
         resumeUrl:res.data.resumeUrl ?? null,
         uid:userDetail?._id,
         jobTitle:formData.jobTitle ?? null,
         jobDescription:formData.jobDescription ?? null
       });
+
+      router.push('/interview/'+interviewId);
+
     } catch (e) {
       console.error("upload failed", e);
     } finally {
@@ -65,25 +80,26 @@ const onSubmit = async () => {
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button>+ Create Interview</Button>
       </DialogTrigger>
       <DialogContent className='min-w-3xl'>
         <DialogHeader>
           <DialogTitle>Please submit the following details</DialogTitle>
           <DialogDescription>
-            <Tabs defaultValue="account" className="w-full mt-5">
-              <TabsList>
-                <TabsTrigger value="resume-upload">Resume Upload</TabsTrigger>
-                <TabsTrigger value="job-description">Job Description</TabsTrigger>
-              </TabsList>
-              <TabsContent value="resume-upload"><ResumeUpload setFiles={(file:File)=>setFiles(file)}/></TabsContent>
-              <TabsContent value="job-description"><JobDescription onHandleInputChange={onHandleInputChange}  /></TabsContent>
-            </Tabs>
+            Fill in your resume and job details to generate interview questions.
           </DialogDescription>
         </DialogHeader>
+        <Tabs defaultValue="account" className="w-full mt-5">
+          <TabsList>
+            <TabsTrigger value="resume-upload">Resume Upload</TabsTrigger>
+            <TabsTrigger value="job-description">Job Description</TabsTrigger>
+          </TabsList>
+          <TabsContent value="resume-upload"><ResumeUpload setFiles={(file:File)=>setFiles(file)}/></TabsContent>
+          <TabsContent value="job-description"><JobDescription onHandleInputChange={onHandleInputChange}  /></TabsContent>
+        </Tabs>
         <DialogFooter className='flex gap-6'>
-          <DialogClose>
+          <DialogClose asChild>
             <Button variant={'ghost'}>Cancel</Button>
           </DialogClose>
           <Button onClick={onSubmit} disabled={loading || !formData?.jobTitle || !formData?.jobDescription}>

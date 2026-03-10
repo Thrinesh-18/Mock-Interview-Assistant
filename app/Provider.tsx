@@ -21,11 +21,24 @@ function Provider({children}: any) {
         });
         console.log("User created successfully:", result);
         setUserDetail(result);
+        localStorage.setItem('userDetail', JSON.stringify(result));
       } catch (error) {
         console.error("Error creating user:", error);
       }
     }
   }
+
+  // Load user from localStorage on mount
+  useEffect(()=>{
+    const saved = localStorage.getItem('userDetail');
+    if (saved) {
+      try {
+        setUserDetail(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error parsing saved user detail:", e);
+      }
+    }
+  },[])
 
   useEffect(()=>{
     if(user) {

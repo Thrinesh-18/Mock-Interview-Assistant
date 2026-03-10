@@ -3,6 +3,7 @@ import { Outfit } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Mock Interview Assistant",
@@ -24,6 +25,7 @@ export default function RootLayout({
         >
           <ConvexClientProvider>
             {children}
+            <Toaster />
           </ConvexClientProvider>
         </body>
       </html>
