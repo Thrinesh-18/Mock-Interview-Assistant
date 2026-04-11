@@ -55,7 +55,7 @@ if (file) {
     else{
         // Call n8n Webhook
 
-        const result=await axios.post("http://localhost:5678/webhook/resume-interview-question",{
+        const result=await axios.post("https://n8n-production-2a44.up.railway.app/webhook/resume-interview-question",{
             resumeUrl:null,
             jobTitle:jobTitle,
             jobDescription:jobDescription
