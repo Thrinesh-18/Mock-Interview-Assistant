@@ -2,13 +2,19 @@
 import React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Send } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { ArrowRight } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { useUser } from "@clerk/nextjs"
+import SendInterviewEmail from "@/components/SendInterviewEmail"
 
 function Interview() {
   const {interviewId}=useParams();
+  const { user } = useUser()
+  const interview = useQuery(api.Interview.GetInterviewQuestions, { interviewRecordId: interviewId as string })
+  if (!interview || !user) return null
   return (
     <div className='flex flex-col items-center justify-center mt-10'>
       <div>
@@ -27,11 +33,12 @@ function Interview() {
 
         <hr />
         <div className='p-6 bg-blue-100 rounded-2xl'>
-        <h2 className='font-semibold text-2xl'>Want to send interview link to someone?</h2>
-        <div className='flex gap-5 w-full items-center max-w-md'>
-          <Input placeholder='Enter email address' className='w-full max-w-xl m-2'/>
-          <Button><Send/></Button>
-        </div>
+          <h2 className='font-semibold text-2xl mb-4'>Want to send interview link to someone?</h2>
+          <SendInterviewEmail 
+            interviewId={interview._id}
+            senderName={user.fullName ?? user.primaryEmailAddress?.emailAddress ?? ""}
+            senderEmail={user.primaryEmailAddress?.emailAddress ?? ""}
+          />
         </div>
       </div>
       </div>

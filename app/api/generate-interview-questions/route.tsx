@@ -4,7 +4,7 @@ import { Webhook } from "lucide-react";
 import { a } from "motion/react-client";
 import axios from "axios";
 import { aj } from "@/utils/arcjet";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 
 var imagekit = new ImageKit({
@@ -19,13 +19,14 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File;
     const jobTitle = formData.get("jobTitle") as File;
     const jobDescription = formData.get("jobDescription") as File;
-
+    const {has}=await auth();
     const decision = await aj.protect(request, { userId:user?.primaryEmailAddress?.emailAddress?? "", requested: 5 }); // Deduct 5 tokens from the bucket
     console.log("Arcjet decision", decision);
+    const isSubscribedUser=has({ plan: 'pro' });
 
     
 //@ts-ignore
-    if(decision.reason.remaining==0){
+    if(decision.reason.remaining==0&&!isSubscribedUser){
         return NextResponse.json({
             status:429,
             result:"You have exceeded the maximum number of requests. Please try again after 24 hours."

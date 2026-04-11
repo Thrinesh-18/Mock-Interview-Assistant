@@ -1,30 +1,41 @@
 import axios from "axios";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-export  async function POST(req:NextRequest) {
-  const {questions}=await req.json();
-//   const result=await axios.get("https://openapi.akool.com/api/open/v4/knowledge/list",{
-//   headers:{
-//     Authorization:`Bearer ${process.env.AKOOL_API_TOKEN}`
-//   }
-//   });
+export async function POST(req: NextRequest) {
+  try {
+    const { questions } = await req.json();
+    
+    // Create a detailed system prompt that instructs the avatar to ask interview questions
+    const questionsList = questions?.questions?.interviews || [];
+    const questionsFormatted = questionsList.map((q: any, i: number) => `${i + 1}. ${q.question}`).join('\n');
+    
+    const systemPrompt = `You are a professional technical interviewer. Your job is to conduct a structured interview.
 
-// const isExist=result.data.data.find((item:any)=>item.name=='Interview Agent Prod')
+INTERVIEW QUESTIONS TO ASK (in order, one after another):
+${questionsFormatted}
 
-// if(!isExist){
-//   //Create new KB
-  const resp=await axios.post('https://openapi.akool.com/api/open/v4/knowledge/create',{
-    name:'Interview Agent Prod'+Date.now(),
-    prologue:'Tell me about yourself',
-    prompt:`You are an interview assistant. Your task is to help users prepare for their interviews by providing them with relevant questions and feedback based on their resume and job description. Start with:"tell me about yourself".You will analyze the user\'s resume and the job description to ask interview questions that can help the user practice effectively. Additionally, you will provide constructive feedback on the user\'s answers to help them improve their performance in real interviews. 
-    questions:
-    ${JSON.stringify(questions)}`
-  },{
-    headers:{
-      Authorization:`Bearer ${process.env.AKOOL_API_TOKEN}`
-    }
-  },);
-  console.log(resp.data);
-  return NextResponse.json(resp.data);
+HOW TO CONDUCT THE INTERVIEW:
+1. Listen to what the candidate says
+2. After they answer each question, ask the next question from the list
+3. You can ask follow-up questions to understand their answer better
+4. Be conversational and professional
+5. Do not move to the next question until they finish answering
+6. Do not repeat or echo their words back to them
+7. After asking all questions, summarize the interview
+
+Remember: Your goal is to ask these specific questions in order and evaluate their responses. Start asking Question 1 now.`;
+
+    return NextResponse.json({
+      success: true,
+      systemPrompt: systemPrompt,
+      questions: questions,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error preparing interview context:", error);
+    return NextResponse.json(
+      { error: "Failed to prepare interview context" },
+      { status: 500 }
+    );
+  }
 }

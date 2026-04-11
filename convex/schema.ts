@@ -13,8 +13,18 @@ export default defineSchema({
     interviewQuestions: v.any(),
     resumeUrl: v.union(v.string(), v.null()),
     userId: v.id("UserTable"),
-    status:v.string(),
-    jobTitle:v.optional(v.string()),
-    jobDescription:v.optional(v.string())
+    status: v.string(),
+    jobTitle: v.optional(v.string()),
+    jobDescription: v.optional(v.string()),
+    feedback: v.optional(v.object({
+      feeback: v.optional(v.string()),
+      feedback: v.optional(v.string()),
+      Feedback: v.optional(v.string()),
+      rating: v.optional(v.number()),
+      Rating: v.optional(v.number()),
+      suggestion: v.optional(v.string()),
+      suggestions: v.optional(v.string()),
+      Suggestions: v.optional(v.string())
+    }))
   })
 })
