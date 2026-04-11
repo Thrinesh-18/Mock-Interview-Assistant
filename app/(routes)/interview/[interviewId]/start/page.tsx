@@ -254,6 +254,13 @@ function StartInterview() {
             // ignore
           }
 
+          // Pause and reset audio to prevent play interruption errors
+          if (audioEl.current) {
+            audioEl.current.pause();
+            audioEl.current.currentTime = 0;
+            audioEl.current.srcObject = null;
+          }
+
           // Attach to both <audio> and <video> to maximize playback compatibility.
           track.attach(audioEl.current);
           if (videoEl.current) track.attach(videoEl.current);
@@ -261,16 +268,31 @@ function StartInterview() {
 
           audioEl.current.muted = false;
           audioEl.current.volume = 1;
-          void audioEl.current.play().catch((err) => {
-            console.error("Audio autoplay blocked:", err);
-          });
+          
+          // Attempt to play with better error handling
+          const playPromise = audioEl.current.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .catch((err) => {
+                // Ignore AbortError (interrupted by new load) and NotAllowedError (autoplay restriction)
+                if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+                  console.error("Audio playback error:", err);
+                }
+              });
+          }
 
           if (videoEl.current) {
             videoEl.current.muted = false;
             videoEl.current.volume = 1;
-            void videoEl.current.play().catch(() => {
-              // ignore: video is already autoplaying, but some browsers gate audio to user gestures
-            });
+            const videoPlayPromise = videoEl.current.play();
+            if (videoPlayPromise !== undefined) {
+              videoPlayPromise.catch((err) => {
+                // ignore: video is already autoplaying, but some browsers gate audio to user gestures
+                if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+                  console.warn("Video playback warning:", err.name);
+                }
+              });
+            }
           }
 
         }
@@ -339,6 +361,8 @@ function StartInterview() {
         messages:messages
       });
       
+      console.log('Feedback API response:', result.data);
+      
       // Validate that feedback was actually generated
       if (!result.data || (result.data.error && !result.data.feedback)) {
         toast.error('Failed to generate feedback. Please try again.');
@@ -346,7 +370,12 @@ function StartInterview() {
         return;
       }
       
-      console.log(result.data);
+      console.log('Feedback data structure:', {
+        feeback: result.data.feeback,
+        rating: result.data.rating,
+        suggestion: result.data.suggestion
+      });
+      
       toast.success('Feedback Generated Successfully');
       
       //Save the feedback 
@@ -356,6 +385,7 @@ function StartInterview() {
         recordId:interviewId
       });
       console.log("Feedback saved to database:", resp);
+      console.log("Feedback saved with data:", result.data);
       toast.success('Interview Completed!');
 
       //Navigate the feedback

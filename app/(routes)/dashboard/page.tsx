@@ -30,7 +30,8 @@ function DashBoard() {
     const transformedResult = result.map(interview => ({
       ...interview,
       jobTitle: interview.jobTitle ?? null,
-      jobDescription: interview.jobDescription ?? null
+      jobDescription: interview.jobDescription ?? null,
+      feedback: interview.feedback ?? null
     }));
     setInterviewsList(transformedResult);
     setloading(false);

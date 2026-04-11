@@ -12,14 +12,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log('Sending messages to webhook for feedback generation...');
     const result = await axios.post('http://localhost:5678/webhook/9ad354a3-3003-4561-a198-93d8fcc3e580', {
       messages:JSON.stringify(messages)
     });
     
-    console.log('Feedback API response:', result.data);
+    console.log('Webhook response received:', {
+      status: result.status,
+      data: result.data,
+      type: typeof result.data
+    });
     
     // Ensure we always return valid feedback content
     if (!result.data) {
+      console.error('Webhook returned empty response');
       return NextResponse.json(
         { error: "No feedback generated" },
         { status: 500 }
@@ -36,6 +42,11 @@ export async function POST(req: NextRequest) {
     
     // Return a meaningful error response instead of crashing
     if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
       return NextResponse.json(
         { error: `External service error: ${error.message}` },
         { status: error.response?.status || 500 }
@@ -60,46 +71,53 @@ export async function POST(req: NextRequest) {
  */
 function parseFeedbackResponse(webhookData: any) {
   console.log('parseFeedbackResponse input:', webhookData);
+  console.log('parseFeedbackResponse input type:', typeof webhookData);
   
-  // Handle capitalized field names from Convex database
-  if (webhookData?.Feedback || webhookData?.feedback || webhookData?.feeback) {
-    const feedback = webhookData?.Feedback || webhookData?.feedback || webhookData?.feeback;
-    const rating = webhookData?.Rating !== undefined ? webhookData?.Rating : webhookData?.rating;
-    const suggestion = webhookData?.Suggestions || webhookData?.suggestion || webhookData?.suggestions;
-    
-    return {
-      feeback: String(feedback),
-      rating: typeof rating === 'number' ? Math.min(Math.max(rating, 0), 10) : 7,
-      suggestion: String(suggestion || "Keep practicing!")
-    };
-  }
-  
-  // If webhook returns an object with the expected structure, use it as-is
-  if (webhookData?.feeback && webhookData?.rating !== undefined && webhookData?.suggestion) {
-    return webhookData;
-  }
-  
-  // If webhook returns a string, try to parse it
+  // Handle string input (convert to object for processing)
   if (typeof webhookData === 'string') {
-    // Try to extract rating from common patterns like "Rating: 7/10" or "7/10"
-    const ratingMatch = webhookData.match(/(?:rating[:\s]+)?(\d+)\s*(?:\/10)?/i);
-    const rating = ratingMatch ? parseInt(ratingMatch[1]) : 7;
-    
-    return {
-      feeback: webhookData,
-      rating: Math.min(Math.max(rating, 0), 10), // Clamp between 0-10
-      suggestion: "Continue practising and improving your communication skills."
-    };
+    try {
+      // Try to parse as JSON first
+      webhookData = JSON.parse(webhookData);
+    } catch {
+      // If not JSON, treat as plain text feedback
+      const ratingMatch = webhookData.match(/(?:rating[:\s]+)?(\d+)\s*(?:\/10)?/i);
+      const rating = ratingMatch ? parseInt(ratingMatch[1]) : 7;
+      
+      return {
+        feeback: webhookData,
+        rating: Math.min(Math.max(rating, 0), 10),
+        suggestion: "Continue practising and improving your communication skills."
+      };
+    }
   }
   
-  // If it's an object but not in the expected format, try to extract common fields
-  const feedback = webhookData?.feedback || webhookData?.message || JSON.stringify(webhookData);
-  const rating = webhookData?.rating || webhookData?.score || 7;
-  const suggestion = webhookData?.suggestion || webhookData?.suggestions || webhookData?.recommendation || "Keep practicing!";
+  // Extract feedback from various possible field names
+  const feedback = webhookData?.Feedback || webhookData?.feedback || webhookData?.feeback || 
+                   webhookData?.message || webhookData?.feedbackText || '';
   
-  return {
-    feeback: String(feedback),
-    rating: Math.min(Math.max(Number(rating), 0), 10),
+  // Extract rating from various possible field names
+  let rating = webhookData?.Rating || webhookData?.rating || webhookData?.score || 7;
+  
+  // Extract suggestion from various possible field names
+  const suggestion = webhookData?.Suggestions || webhookData?.Suggestion || webhookData?.suggestion || 
+                     webhookData?.suggestions || webhookData?.recommendations || 
+                     webhookData?.recommendation || webhookData?.improvementAreas || 
+                     "Keep practicing and improving your communication skills!";
+  
+  // Validate and clamp rating
+  if (typeof rating !== 'number') {
+    const ratingStr = String(rating);
+    const ratingMatch = ratingStr.match(/(\d+)/);
+    rating = ratingMatch ? parseInt(ratingMatch[1]) : 7;
+  }
+  rating = Math.min(Math.max(rating, 0), 10);
+  
+  const result = {
+    feeback: String(feedback || 'No feedback available'),
+    rating: rating,
     suggestion: String(suggestion)
   };
+  
+  console.log('parseFeedbackResponse output:', result);
+  return result;
 }

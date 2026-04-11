@@ -9,11 +9,12 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useUser } from "@clerk/nextjs"
 import SendInterviewEmail from "@/components/SendInterviewEmail"
+import { Id } from "@/convex/_generated/dataModel";
 
 function Interview() {
   const {interviewId}=useParams();
   const { user } = useUser()
-  const interview = useQuery(api.Interview.GetInterviewQuestions, { interviewRecordId: interviewId as string })
+  const interview = useQuery(api.Interview.GetInterviewQuestions, { interviewRecordId: interviewId as Id<"InterviewSessionTable"> })
   if (!interview || !user) return null
   return (
     <div className='flex flex-col items-center justify-center mt-10'>
