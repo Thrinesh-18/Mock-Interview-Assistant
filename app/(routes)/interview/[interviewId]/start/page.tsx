@@ -415,8 +415,8 @@ function StartInterview() {
       <div
         className="video-container relative rounded-2xl overflow-hidden border bg-white flex items-center justify-center"
         style={{
-          width: 1200,
-          height: 1000,
+          width: 1000,
+          height: 800,
           background: "#000000",
           marginTop: 20,
         }}
