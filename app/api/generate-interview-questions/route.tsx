@@ -43,7 +43,7 @@ if (file) {
             fileName: file.name,
             isPublished: true
         });
-        const result=await axios.post("https://n8n-production-2a44.up.railway.app/webhook/resume-interview-question",{
+        const result=await axios.post("https://n8n-latest-1-rt9v.onrender.com/webhook/resume-interview-question",{
             resumeUrl:uploadResponse.url
         });
         console.log(result.data);
@@ -55,7 +55,7 @@ if (file) {
     else{
         // Call n8n Webhook
 
-        const result=await axios.post("https://n8n-production-2a44.up.railway.app/webhook/resume-interview-question",{
+        const result=await axios.post("https://n8n-latest-1-rt9v.onrender.com/webhook/resume-interview-question",{
             resumeUrl:null,
             jobTitle:jobTitle,
             jobDescription:jobDescription

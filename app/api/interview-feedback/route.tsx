@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Sending messages to webhook for feedback generation...');
-    const result = await axios.post('https://n8n-production-2a44.up.railway.app/webhook/9ad354a3-3003-4561-a198-93d8fcc3e580', {
+    const result = await axios.post('https://n8n-latest-1-rt9v.onrender.com/webhook/9ad354a3-3003-4561-a198-93d8fcc3e580', {
       messages:JSON.stringify(messages)
     });
     
